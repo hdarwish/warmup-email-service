@@ -1,18 +1,18 @@
 # Email Warmup Service
 
-A microservice for email warmup that handles email sending with quota management and validation, built with NestJS.
+A microservice for email warmup that handles email sending with quota management and validation, built with NestJS and React.
 
 ## Features
 
 - Email sending with quota management
 - Email validation and reachability checking
-- Credential management for email providers (Gmail, Outlook)
+- Gmail OAuth2 integration for secure email access
 - Queue-based processing with RabbitMQ
 - Comprehensive logging with Winston
 - TypeORM for database management
 - Swagger API documentation
 - JWT-based authentication
-- OAuth integration for email providers
+- React frontend with Material-UI
 
 ## Project Structure
 
@@ -44,8 +44,13 @@ A microservice for email warmup that handles email sending with quota management
 │   │           └── services/     # Queue implementations
 │   ├── Dockerfile         # Backend container configuration
 │   └── package.json       # Backend dependencies
-├── frontend/              # Frontend application
+├── frontend/              # Frontend React application
 │   ├── src/              # Frontend source code
+│   │   ├── components/   # Reusable React components
+│   │   ├── contexts/     # React contexts (Auth, etc.)
+│   │   ├── pages/        # Page components
+│   │   ├── services/     # API services
+│   │   └── types/        # TypeScript type definitions
 │   ├── public/           # Static files
 │   └── package.json      # Frontend dependencies
 ├── docker-compose.yml     # Docker services configuration
@@ -75,6 +80,37 @@ The application follows Clean Architecture principles with clear separation of c
    - External service integrations
    - Queue implementations
    - Depends on domain layer
+
+4. **Frontend Layer**
+   - React components
+   - Context-based state management
+   - API service integration
+   - Material-UI components
+
+## Flow
+
+1. **Authentication Flow**
+   - User registers/logs in through frontend
+   - JWT token is stored in localStorage
+   - Token is used for all subsequent API calls
+
+2. **Email Account Linking**
+   - User clicks "Link Gmail Account"
+   - Frontend redirects to Gmail OAuth consent screen
+   - User authorizes the application
+   - Backend stores Gmail credentials securely
+
+3. **Email Warmup Process**
+   - System schedules warmup emails based on quota
+   - Emails are queued in RabbitMQ
+   - Email processor handles sending with retry logic
+   - Quota is updated after successful sends
+
+4. **Monitoring and Statistics**
+   - Real-time dashboard shows email stats
+   - Quota usage tracking
+   - Success/failure rates
+   - Activity charts
 
 ## API Endpoints
 
@@ -112,8 +148,8 @@ GET /email/quota - Get quota information
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/email-warmup-service.git
-cd email-warmup-service
+git clone https://github.com/hdarwish/warmup-email-service.git
+cd warmup-email-service
 ```
 
 2. Copy the example environment files:
@@ -142,7 +178,7 @@ If you prefer to run the services separately for development:
 
 1. Start the infrastructure services:
 ```bash
-docker-compose up -d postgres rabbitmq redis
+docker-compose up -d postgres rabbitmq
 ```
 
 2. Backend Setup:
@@ -201,22 +237,28 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/email_warmup
 # Message Queue
 RABBITMQ_URL=amqp://guest:guest@localhost:5672
 
-# Redis
-REDIS_URL=redis://localhost:6379
 
 # JWT
 JWT_SECRET=your-secret-key
 JWT_EXPIRATION=1h
 
-# Email Providers
+# Gmail OAuth2
 GMAIL_CLIENT_ID=your-gmail-client-id
 GMAIL_CLIENT_SECRET=your-gmail-client-secret
-OUTLOOK_CLIENT_ID=your-outlook-client-id
-OUTLOOK_CLIENT_SECRET=your-outlook-client-secret
+GMAIL_REDIRECT_URI=http://localhost:3000/email-credentials/gmail/callback
 
 # Email Settings
 DEFAULT_EMAIL_QUOTA=50
 EMAIL_RETRY_DELAY=300
+
+# Email Validation
+THROWAWAY_DOMAINS=tempmail.com,throwawaymail.com,temp-mail.org,tempmail.plus,tempmail.net,tempmailaddress.com,tempmail.ninja,tempmail.website,tempmail.ws,tempmail.xyz
+
+# Email Settings
+MAX_EMAIL_QUOTA=500
+
+# Warmup Settings
+WARMUP_RECIPIENTS=your-test-email1@gmail.com,your-test-email2@gmail.com
 ```
 
 ### Frontend Environment Variables
