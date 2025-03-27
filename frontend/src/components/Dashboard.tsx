@@ -46,26 +46,23 @@ export const Dashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [testEmailAddress, setTestEmailAddress] = useState('');
-  const [hasToken, setHasToken] = useState(false);
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    setHasToken(!!token);
-  }, []);
+  const [hasCredentials, setHasCredentials] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [statsData, quotaData] = await Promise.all([
+        const [statsData, quotaData, credentialsData] = await Promise.all([
           emailAPI.getEmailStats(),
           emailAPI.getQuotaInfo(),
+          emailAPI.getEmailCredentials(),
         ]);
         setStats(statsData);
         setQuota(quotaData);
+        setHasCredentials(credentialsData.length > 0);
       } catch (err) {
+        console.error('Error fetching data:', err);
         setError('Failed to fetch dashboard data');
-        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -77,7 +74,8 @@ export const Dashboard: React.FC = () => {
   const handleLinkGmail = async () => {
     try {
       const response = await emailAPI.initiateGmailAuth();
-      window.location.replace(response.url);
+      // Open in a new window instead of replacing current page
+      window.open(response.url, '_blank');
     } catch (err) {
       setError('Failed to initiate Gmail authentication');
       console.error(err);
@@ -118,7 +116,7 @@ export const Dashboard: React.FC = () => {
         <Typography variant="h4">
           Email Warmup Dashboard
         </Typography>
-        {!hasToken && (
+        {!hasCredentials && (
           <Button
             variant="contained"
             onClick={handleLinkGmail}

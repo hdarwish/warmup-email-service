@@ -23,8 +23,8 @@ export const GmailCallback: React.FC = () => {
       }
 
       try {
-        // The backend will handle the OAuth2 callback
-        // We just need to redirect back to the dashboard
+        // Call the backend to complete the OAuth2 flow
+        await emailAPI.completeGmailAuth(code, state);
         navigate('/dashboard', { 
           state: { 
             success: 'Gmail account linked successfully. You can now send emails using your Gmail account.' 

@@ -53,6 +53,10 @@ export const emailAPI = {
     const response = await api.get('/email-credentials/gmail/auth');
     return response.data;
   },
+  completeGmailAuth: async (code: string, state: string) => {
+    const response = await api.post('/email-credentials/gmail/callback', { code, state });
+    return response.data;
+  },
   getEmailStats: async () => {
     const response = await api.get('/email/stats');
     return response.data;
