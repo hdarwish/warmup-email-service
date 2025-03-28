@@ -103,19 +103,47 @@ export class RabbitMQService implements IQueueService, OnModuleInit {
   async consumeEmails(callback: (email: Email) => Promise<void>): Promise<void> {
     try {
       await this.ensureConnection();
-      await this.channel.consume(this.queueName, async (msg) => {
-        if (msg) {
-          try {
-            const email = JSON.parse(msg.content.toString()) as Email;
-            await callback(email);
-            this.channel.ack(msg);
-          } catch (error) {
-            this.logger.error(`Error processing message: ${error.message}`);
-            this.channel.nack(msg, false, true);
+      
+      const consume = async () => {
+        try {
+          await this.channel.consume(this.queueName, async (msg) => {
+            if (!msg) return;
+            
+            try {
+              const email = JSON.parse(msg.content.toString()) as Email;
+              await callback(email);
+              
+              // Check if channel is still open before acking
+              if (this.channel && !this.channel.closed) {
+                this.channel.ack(msg);
+              } else {
+                this.logger.warn('Channel closed, message not acknowledged');
+              }
+            } catch (error) {
+              this.logger.error(`Error processing message: ${error.message}`);
+              // Check if channel is still open before nacking
+              if (this.channel && !this.channel.closed) {
+                this.channel.nack(msg, false, true);
+              } else {
+                this.logger.warn('Channel closed, message not negatively acknowledged');
+              }
+            }
+          });
+          this.logger.log('Started consuming emails from queue');
+        } catch (error) {
+          this.logger.error(`Error in consumer: ${error.message}`);
+          // If channel is closed, try to reconnect
+          if (error.message.includes('Channel closed')) {
+            await this.connect();
+            await this.setupQueues();
+            await consume(); // Retry consuming
+          } else {
+            throw error;
           }
         }
-      });
-      this.logger.log('Started consuming emails from queue');
+      };
+
+      await consume();
     } catch (error) {
       this.logger.error(`Failed to setup consumer: ${error.message}`);
       throw error;

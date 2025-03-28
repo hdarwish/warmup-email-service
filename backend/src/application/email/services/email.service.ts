@@ -61,14 +61,20 @@ export class EmailService {
         return this.emailRepository.save(email);
       }
 
-      // Check quota
+        // Check quota
       const quota = await this.quotaRepository.findOne({ 
         where: { user: { id: userId } },
         relations: ['user']
       });
-      if (!quota || quota.isQuotaExceeded()) {
-        email.status = EmailStatus.QUEUED;
-        await this.rabbitMQService.retryEmail(email, 300000); // Retry after 5 minutes
+      if (!quota) {
+        email.status = EmailStatus.FAILED;
+        email.error = 'No quota found';
+        return this.emailRepository.save(email);
+      }
+
+      if (quota.isQuotaExceeded()) {
+        email.status = EmailStatus.REJECTED;
+        email.error = 'Daily quota exceeded';
         return this.emailRepository.save(email);
       }
 
@@ -177,15 +183,28 @@ export class EmailService {
     const quota = await this.quotaRepository.findOne({
       where: { user: { id: userId } },
     });
-
+  
     if (!quota) {
       throw new NotFoundException('Quota not found for user');
     }
-
+  
+    // Reset quota if needed and save changes
+    quota.resetDailyQuotaIfNeeded();
+    await this.quotaRepository.save(quota);
+  
     const dailyLimit = quota.calculateDailyLimit();
     const usedQuota = await this.getUsedQuotaToday(userId);
     const remainingQuota = Math.max(0, dailyLimit - usedQuota);
     const quotaResetTime = this.getQuotaResetTime();
+  
+    this.logger.debug(`Quota info for user ${userId}:`, {
+      dailyLimit,
+      usedQuota,
+      remainingQuota,
+      sentToday: quota.sentToday,
+      warmupStage: quota.warmupStage,
+      warmupDay: quota.warmupDay
+    });
 
     return {
       dailyQuota: dailyLimit,
@@ -200,17 +219,15 @@ export class EmailService {
   }
 
   private async getUsedQuotaToday(userId: string): Promise<number> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const emails = await this.emailRepository.find({
-      where: {
-        userId,
-        createdAt: today,
-      },
+    const quota = await this.quotaRepository.findOne({
+      where: { user: { id: userId } },
     });
-
-    return emails.length;
+  
+    if (!quota) {
+      throw new NotFoundException('Quota not found for user');
+    }
+  
+    return quota.sentToday;
   }
 
   private getQuotaResetTime(): string {

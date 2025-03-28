@@ -16,6 +16,8 @@ import {
 } from '@mui/material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import LogoutIcon from '@mui/icons-material/Logout';
+import LinkIcon from '@mui/icons-material/Link';
+import LinkOffIcon from '@mui/icons-material/LinkOff';
 
 interface EmailStats {
   totalSent: number;
@@ -94,15 +96,35 @@ export const Dashboard: React.FC = () => {
       setSendingTest(true);
       setError(null);
       setSuccess(null);
-      await emailAPI.sendTestEmail(testEmailAddress);
+      
+      console.log('Starting test email send to:', testEmailAddress);
+      const response = await emailAPI.sendTestEmail(testEmailAddress);
+      console.log('Test email response:', response);
+      
       setSuccess('Test email sent successfully');
-      setTestEmailAddress(''); // Clear the input after successful send
-      // Refetch data to update stats
+      setTestEmailAddress('');
+      
+      // Only fetch stats if the test was successful
       await fetchData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send test email');
+      console.error('Test email error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to send test email';
+      setError(errorMessage);
     } finally {
       setSendingTest(false);
+    }
+  };
+
+  const handleUnlinkGmail = async () => {
+    try {
+      setError(null);
+      setSuccess(null);
+      await emailAPI.deleteGmailCredentials();
+      setSuccess('Gmail account successfully unlinked');
+      await fetchData(); // Refresh the data to update hasCredentials state
+    } catch (err) {
+      console.error('Failed to unlink Gmail:', err);
+      setError('Failed to unlink Gmail account');
     }
   };
 
@@ -126,24 +148,33 @@ export const Dashboard: React.FC = () => {
           Email Warmup Dashboard
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
-          {!hasCredentials && (
-            <Button
-              variant="contained"
-              onClick={handleLinkGmail}
-              startIcon={<span>🔗</span>}
-            >
-              Link Gmail Account
-            </Button>
-          )}
-          <Button
-            variant="outlined"
-            color="error"
-            onClick={handleLogout}
-            startIcon={<LogoutIcon />}
-          >
-            Logout
-          </Button>
-        </Box>
+  {!hasCredentials ? (
+    <Button
+      variant="contained"
+      onClick={handleLinkGmail}
+      startIcon={<LinkIcon />}
+    >
+      Link Gmail Account
+    </Button>
+  ) : (
+    <Button
+      variant="outlined"
+      color="warning"
+      onClick={handleUnlinkGmail}
+      startIcon={<LinkOffIcon />}
+    >
+      Unlink Gmail Account
+    </Button>
+  )}
+  <Button
+    variant="outlined"
+    color="error"
+    onClick={handleLogout}
+    startIcon={<LogoutIcon />}
+  >
+    Logout
+  </Button>
+</Box>
       </Box>
 
       {error && (

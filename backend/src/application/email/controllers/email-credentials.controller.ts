@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Put, Param, UseGuards, Query, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, Post, Put, Param, UseGuards, Query, Req, Res, Delete } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { EmailCredentialsService } from '../services/email-credentials.service';
 import { CreateEmailCredentialsDto } from '../dto/create-email-credentials.dto';
@@ -130,5 +130,18 @@ export class EmailCredentialsController {
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
       res.redirect(`${frontendUrl}/dashboard?gmailAuth=error&message=${encodeURIComponent(error.message)}`);
     }
+  }
+
+  @Delete('gmail')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete Gmail credentials' })
+  @ApiResponse({ status: 200, description: 'Gmail credentials successfully deleted' })
+  async deleteGmailCredentials(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('tenantId') tenantId: string,
+  ) {
+    await this.emailCredentialsService.deleteGmailCredentials(userId, tenantId);
+    return { message: 'Gmail credentials successfully deleted' };
   }
 } 

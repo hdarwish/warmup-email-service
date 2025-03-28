@@ -73,9 +73,31 @@ export const emailAPI = {
     const response = await api.get('/email-credentials');
     return response.data;
   },
+  deleteGmailCredentials: async () => {
+    try {
+      const response = await api.delete('/email-credentials/gmail');
+      return response.data;
+    } catch (error) {
+      console.error('Failed to delete Gmail credentials:', error);
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Failed to delete Gmail credentials');
+      }
+      throw error;
+    }
+  },
   sendTestEmail: async (toAddress: string) => {
-    const response = await api.post('/email/test', { toAddress });
-    return response.data;
+    try {
+      console.log('Sending test email to:', toAddress);
+      const response = await api.post('/email/test', { toAddress });
+      console.log('Test email response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Test email error:', error);
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Failed to send test email');
+      }
+      throw error;
+    }
   },
 };
 

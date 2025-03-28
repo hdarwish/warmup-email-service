@@ -235,7 +235,7 @@ PORT=3000
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/email_warmup
 
 # Message Queue
-RABBITMQ_URL=amqp://guest:guest@localhost:5672
+RABBITMQ_URL=amqp://localhost:5672
 
 
 # JWT

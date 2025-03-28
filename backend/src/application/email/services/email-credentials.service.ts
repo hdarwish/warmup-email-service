@@ -111,4 +111,12 @@ export class EmailCredentialsService {
       select: ['id', 'email', 'provider', 'createdAt', 'updatedAt'],
     });
   }
+
+  async deleteGmailCredentials(userId: string, tenantId: string): Promise<void> {
+    await this.emailCredentialsRepository.delete({
+      userId,
+      tenantId,
+      provider: EmailProviderType.GMAIL,
+    });
+  }
 } 
