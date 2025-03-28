@@ -8,8 +8,11 @@ import {
   Button,
   Link,
   Alert,
+  Paper,
+  CircularProgress,
 } from '@mui/material';
 import { authAPI } from '../services/api';
+import { Header } from './Header';
 
 export const Register: React.FC = () => {
   const navigate = useNavigate();
@@ -37,77 +40,94 @@ export const Register: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="sm">
-      <Box
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-        justifyContent="center"
-        minHeight="100vh"
-        gap={2}
-      >
-        <Typography variant="h4" component="h1" gutterBottom>
-          Register
-        </Typography>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <Header />
+      <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', py: 4 }}>
+        <Container maxWidth="sm">
+          <Paper elevation={3} sx={{ p: 4 }}>
+            <Typography variant="h4" align="center" gutterBottom>
+              Create Account
+            </Typography>
+            <Typography variant="body1" align="center" color="text.secondary" sx={{ mb: 4 }}>
+              Sign up to start warming up your email
+            </Typography>
 
-        {error && (
-          <Alert severity="error" sx={{ width: '100%' }}>
-            {error}
-          </Alert>
-        )}
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
 
-        <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="name"
-            label="Full Name"
-            name="name"
-            autoComplete="name"
-            autoFocus
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="email"
-            label="Email Address"
-            name="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="password"
-            label="Password"
-            type="password"
-            id="password"
-            autoComplete="new-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{ mt: 3, mb: 2 }}
-            disabled={loading}
-          >
-            {loading ? 'Registering...' : 'Register'}
-          </Button>
-          <Box textAlign="center">
-            <Link component={RouterLink} to="/login" variant="body2">
-              Already have an account? Sign in
-            </Link>
-          </Box>
-        </Box>
+            <Box component="form" onSubmit={handleSubmit}>
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                id="name"
+                label="Full Name"
+                name="name"
+                autoComplete="name"
+                autoFocus
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                id="email"
+                label="Email Address"
+                name="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="password"
+                label="Password"
+                type="password"
+                id="password"
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                sx={{ mt: 3 }}
+                disabled={loading}
+                size="large"
+              >
+                {loading ? <CircularProgress size={24} /> : 'Create Account'}
+              </Button>
+            </Box>
+
+            <Box sx={{ mt: 3, textAlign: 'center' }}>
+              <Typography variant="body1" color="text.secondary" gutterBottom>
+                Already have an account?
+              </Typography>
+              <Link
+                component={RouterLink}
+                to="/login"
+                sx={{ 
+                  textDecoration: 'none',
+                  color: 'primary.main',
+                  fontWeight: 'bold',
+                  '&:hover': {
+                    textDecoration: 'underline',
+                  }
+                }}
+              >
+                Sign in
+              </Link>
+            </Box>
+          </Paper>
+        </Container>
       </Box>
-    </Container>
+    </Box>
   );
 }; 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { emailAPI } from '../services/api';
+import { emailAPI, authAPI } from '../services/api';
 import {
   Box,
   Container,
@@ -15,6 +15,7 @@ import {
   CardContent,
 } from '@mui/material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import LogoutIcon from '@mui/icons-material/Logout';
 
 interface EmailStats {
   totalSent: number;
@@ -47,27 +48,28 @@ export const Dashboard: React.FC = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [testEmailAddress, setTestEmailAddress] = useState('');
   const [hasCredentials, setHasCredentials] = useState(false);
+  const [sendingTest, setSendingTest] = useState(false);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [statsData, quotaData, credentialsData] = await Promise.all([
+        emailAPI.getEmailStats(),
+        emailAPI.getQuotaInfo(),
+        emailAPI.getEmailCredentials(),
+      ]);
+      setStats(statsData);
+      setQuota(quotaData);
+      setHasCredentials(credentialsData.length > 0);
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setError('Failed to fetch dashboard data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [statsData, quotaData, credentialsData] = await Promise.all([
-          emailAPI.getEmailStats(),
-          emailAPI.getQuotaInfo(),
-          emailAPI.getEmailCredentials(),
-        ]);
-        setStats(statsData);
-        setQuota(quotaData);
-        setHasCredentials(credentialsData.length > 0);
-      } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Failed to fetch dashboard data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
 
@@ -89,17 +91,24 @@ export const Dashboard: React.FC = () => {
     }
 
     try {
-      setLoading(true);
+      setSendingTest(true);
       setError(null);
       setSuccess(null);
       await emailAPI.sendTestEmail(testEmailAddress);
       setSuccess('Test email sent successfully');
       setTestEmailAddress(''); // Clear the input after successful send
+      // Refetch data to update stats
+      await fetchData();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send test email');
     } finally {
-      setLoading(false);
+      setSendingTest(false);
     }
+  };
+
+  const handleLogout = () => {
+    authAPI.logout();
+    navigate('/login');
   };
 
   if (loading) {
@@ -113,18 +122,28 @@ export const Dashboard: React.FC = () => {
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Typography variant="h4">
+        <Typography variant="h4"  color="text.secondary">
           Email Warmup Dashboard
         </Typography>
-        {!hasCredentials && (
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          {!hasCredentials && (
+            <Button
+              variant="contained"
+              onClick={handleLinkGmail}
+              startIcon={<span>🔗</span>}
+            >
+              Link Gmail Account
+            </Button>
+          )}
           <Button
-            variant="contained"
-            onClick={handleLinkGmail}
-            startIcon={<span>🔗</span>}
+            variant="outlined"
+            color="error"
+            onClick={handleLogout}
+            startIcon={<LogoutIcon />}
           >
-            Link Gmail Account
+            Logout
           </Button>
-        )}
+        </Box>
       </Box>
 
       {error && (
@@ -198,10 +217,10 @@ export const Dashboard: React.FC = () => {
                 <Button
                   variant="contained"
                   onClick={handleSendTestEmail}
-                  disabled={loading}
+                  disabled={sendingTest}
                   sx={{ minWidth: 120 }}
                 >
-                  {loading ? <CircularProgress size={24} /> : 'Send Test'}
+                  {sendingTest ? <CircularProgress size={24} /> : 'Send Test'}
                 </Button>
               </Box>
             </CardContent>

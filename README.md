@@ -142,7 +142,7 @@ GET /email/quota - Get quota information
 ### Prerequisites
 
 - Docker and Docker Compose
-- Node.js v18 (for local development only)
+- Node.js v20 (for local development only)
 
 ### Quick Start with Docker
 

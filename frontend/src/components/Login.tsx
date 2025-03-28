@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import {
   Container,
   Paper,
@@ -7,9 +7,11 @@ import {
   Button,
   Typography,
   Box,
+  Link,
   Alert,
 } from '@mui/material';
 import { authAPI } from '../services/api';
+import { Header } from './Header';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -35,6 +37,7 @@ export const Login: React.FC = () => {
   return (
     <Container maxWidth="sm">
       <Box sx={{ mt: 8 }}>
+      <Header />
         <Paper sx={{ p: 4 }}>
           <Typography variant="h4" component="h1" gutterBottom>
             Login
@@ -73,6 +76,11 @@ export const Login: React.FC = () => {
             </Button>
           </form>
         </Paper>
+        <Box textAlign="center">
+            <Link component={RouterLink} to="/register" variant="body2">
+              Don't have an account? Register for new Account.
+            </Link>
+        </Box>
       </Box>
     </Container>
   );
